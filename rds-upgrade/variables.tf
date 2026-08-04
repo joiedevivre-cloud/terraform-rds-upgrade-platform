@@ -43,7 +43,7 @@ variable "upgrade_complete" {
 variable "manage_master_user_password" {
   description = "Use only for initial baseline creation. Must be false before Aurora Blue/Green creation; transition with scripts/convert-master-password.ps1."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "external_master_secret_arn" {

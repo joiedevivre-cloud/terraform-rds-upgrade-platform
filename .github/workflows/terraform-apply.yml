@@ -21,6 +21,8 @@ env:
   TF_INPUT: "false"
   TF_VAR_enable_database: ${{ vars.ENABLE_DATABASE || 'false' }}
   TF_VAR_upgrade_complete: ${{ vars.UPGRADE_COMPLETE || 'false' }}
+  TF_VAR_manage_master_user_password: "false"
+  TF_VAR_external_master_secret_arn: ${{ secrets.EXTERNAL_MASTER_SECRET_ARN }}
 
 jobs:
   plan-production:
