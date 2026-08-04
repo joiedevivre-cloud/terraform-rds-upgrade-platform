@@ -98,6 +98,7 @@
         "iam:ListRolePolicies",
         "iam:ListAttachedRolePolicies",
         "iam:ListRoleTags",
+        "iam:UpdateAssumeRolePolicy",
         "iam:PutRolePolicy",
         "iam:DeleteRolePolicy"
       ],
