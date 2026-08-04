@@ -6,6 +6,9 @@ locals {
 }
 
 data "aws_iam_policy_document" "observability_kms" {
+  #checkov:skip=CKV_AWS_111:A KMS key policy uses Resource "*" to mean only the key to which this policy is attached; service use is restricted by principal and encryption context.
+  #checkov:skip=CKV_AWS_356:KMS key policies do not support the key ARN in their Resource element; AWS requires "*", which refers to this key only.
+  #checkov:skip=CKV_AWS_109:The account-root statement is the AWS KMS delegation pattern that enables this account's IAM policies; it does not grant another account or anonymous principal access.
   statement {
     sid       = "EnableAccountAdministration"
     actions   = ["kms:*"]

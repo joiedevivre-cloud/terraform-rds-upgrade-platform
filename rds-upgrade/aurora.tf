@@ -117,6 +117,8 @@ resource "aws_db_parameter_group" "postgres16" {
 
 resource "aws_rds_cluster" "blue" {
   #checkov:skip=CKV_AWS_327:Existing encrypted lab cluster cannot change its storage KMS key in place; remediation requires snapshot restore to a separately validated CMK-backed cluster.
+  #checkov:skip=CKV2_AWS_8:Automated Aurora backups are enabled; an AWS Backup plan plus measured restore/RTO evidence is intentionally tracked as the separate DR portfolio phase and is not claimed complete here.
+  #checkov:skip=CKV2_AWS_27:PostgreSQL logs are exported and both versioned cluster parameter groups enable slow-query, DDL, connection, disconnection, and lock-wait logging; Checkov cannot resolve the conditional parameter-group reference.
   count = var.enable_database ? 1 : 0
 
   cluster_identifier = "${var.name_prefix}-blue"
