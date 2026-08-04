@@ -93,10 +93,15 @@ variable "allowed_client_cidrs" {
   default     = []
 }
 
-variable "performance_insights_enabled" {
-  description = "Enables Performance Insights when supported by the instance class."
-  type        = bool
-  default     = false
+variable "log_min_duration_statement_ms" {
+  description = "Logs PostgreSQL statements whose execution time reaches this threshold; avoids logging every statement and its literals."
+  type        = number
+  default     = 1000
+
+  validation {
+    condition     = var.log_min_duration_statement_ms >= 0
+    error_message = "log_min_duration_statement_ms must be zero or greater."
+  }
 }
 
 variable "enable_workload_runner" {

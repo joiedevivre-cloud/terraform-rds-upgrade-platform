@@ -24,6 +24,30 @@ resource "aws_rds_cluster_parameter_group" "postgres15" {
     apply_method = "pending-reboot"
   }
 
+  parameter {
+    name         = "log_min_duration_statement"
+    value        = tostring(var.log_min_duration_statement_ms)
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_connections"
+    value        = "1"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_disconnections"
+    value        = "1"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_lock_waits"
+    value        = "1"
+    apply_method = "immediate"
+  }
+
   tags = local.common_tags
 }
 
@@ -36,6 +60,30 @@ resource "aws_rds_cluster_parameter_group" "postgres16" {
     name         = "rds.logical_replication"
     value        = "1"
     apply_method = "pending-reboot"
+  }
+
+  parameter {
+    name         = "log_min_duration_statement"
+    value        = tostring(var.log_min_duration_statement_ms)
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_connections"
+    value        = "1"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_disconnections"
+    value        = "1"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_lock_waits"
+    value        = "1"
+    apply_method = "immediate"
   }
 
   tags = local.common_tags
@@ -68,19 +116,20 @@ resource "aws_rds_cluster" "blue" {
   # Aurora Blue/Green does not support an RDS-managed master password. The
   # baseline may start managed, then scripts/convert-master-password.ps1 performs
   # the one-time transition without putting plaintext in Terraform configuration.
-  manage_master_user_password     = var.manage_master_user_password
-  storage_encrypted               = true
-  db_subnet_group_name            = aws_db_subnet_group.database.name
-  vpc_security_group_ids          = [aws_security_group.database.id]
-  db_cluster_parameter_group_name = local.production_cluster_parameter_group
-  backup_retention_period         = var.backup_retention_days
-  preferred_backup_window         = "05:00-05:30"
-  preferred_maintenance_window    = "sun:06:00-sun:07:00"
-  copy_tags_to_snapshot           = true
-  deletion_protection             = var.deletion_protection
-  skip_final_snapshot             = var.skip_final_snapshot
-  final_snapshot_identifier       = var.skip_final_snapshot ? null : "${var.name_prefix}-blue-final"
-  enabled_cloudwatch_logs_exports = ["postgresql"]
+  manage_master_user_password         = var.manage_master_user_password
+  iam_database_authentication_enabled = true
+  storage_encrypted                   = true
+  db_subnet_group_name                = aws_db_subnet_group.database.name
+  vpc_security_group_ids              = [aws_security_group.database.id]
+  db_cluster_parameter_group_name     = local.production_cluster_parameter_group
+  backup_retention_period             = var.backup_retention_days
+  preferred_backup_window             = "05:00-05:30"
+  preferred_maintenance_window        = "sun:06:00-sun:07:00"
+  copy_tags_to_snapshot               = true
+  deletion_protection                 = var.deletion_protection
+  skip_final_snapshot                 = var.skip_final_snapshot
+  final_snapshot_identifier           = var.skip_final_snapshot ? null : "${var.name_prefix}-blue-final"
+  enabled_cloudwatch_logs_exports     = ["postgresql"]
 
   tags = merge(local.common_tags, {
     Name         = "${var.name_prefix}-blue"
@@ -110,8 +159,9 @@ resource "aws_rds_cluster_instance" "blue_writer" {
   db_parameter_group_name      = local.production_instance_parameter_group
   publicly_accessible          = false
   auto_minor_version_upgrade   = false
-  performance_insights_enabled = var.performance_insights_enabled
-  monitoring_interval          = 0
+  performance_insights_enabled = true
+  monitoring_interval          = 60
+  monitoring_role_arn          = aws_iam_role.rds_enhanced_monitoring.arn
 
   tags = merge(local.common_tags, {
     Name = "${var.name_prefix}-blue-writer"
