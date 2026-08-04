@@ -116,6 +116,7 @@ resource "aws_db_parameter_group" "postgres16" {
 }
 
 resource "aws_rds_cluster" "blue" {
+  #checkov:skip=CKV_AWS_327:Existing encrypted lab cluster cannot change its storage KMS key in place; remediation requires snapshot restore to a separately validated CMK-backed cluster.
   count = var.enable_database ? 1 : 0
 
   cluster_identifier = "${var.name_prefix}-blue"
@@ -161,6 +162,7 @@ resource "aws_rds_cluster" "blue" {
 }
 
 resource "aws_rds_cluster_instance" "blue_writer" {
+  #checkov:skip=CKV_AWS_226:Engine patch levels are pinned for reproducible cross-version evidence; minor upgrades use a separate reviewed PR, precheck, maintenance window, and validation workflow.
   count = var.enable_database ? 1 : 0
 
   identifier                      = "${var.name_prefix}-blue-writer"

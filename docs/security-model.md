@@ -76,3 +76,25 @@ the named artifact, verifies both hashes, and only then assumes `TerraformApplyR
 to apply the exact saved plan. Terraform binary plans can contain sensitive values;
 they are never committed or published as evidence, and repository artifact access
 must remain restricted.
+
+## Time-bounded security exceptions
+
+Two Checkov controls are intentionally suppressed at the exact affected resources;
+neither suppression disables a scanner globally.
+
+- `CKV_AWS_327`: The existing lab cluster is encrypted, but its storage key was not
+  declared as a customer-managed key at creation. Aurora cannot change an existing
+  cluster storage key in place. Remediation is a controlled replacement: take a
+  snapshot, restore a new cluster with a dedicated CMK, validate data and connectivity,
+  cut over, and retain the former cluster for the approved rollback window. Adding
+  `kms_key_id` directly to the existing resource is prohibited because it can propose
+  replacement of the production cluster.
+- `CKV_AWS_226`: Exact Aurora 15.10 and 16.8 patch levels are pinned so performance,
+  query-plan, and compatibility evidence remains reproducible. Minor upgrades are not
+  ignored; they require their own PR, AWS upgrade-path precheck, saved plan, maintenance
+  approval, and post-change validation instead of an unreviewed automatic change.
+
+The database security group has no explicit egress rules. Security groups are stateful,
+so response traffic for an approved inbound PostgreSQL connection remains allowed. Add
+an explicit destination-scoped egress rule only if a documented database feature later
+requires the cluster to initiate outbound traffic.

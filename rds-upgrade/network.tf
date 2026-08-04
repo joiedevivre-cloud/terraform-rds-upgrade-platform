@@ -59,14 +59,6 @@ resource "aws_security_group" "database" {
   description = "Deny-by-default ingress for the Aurora PostgreSQL upgrade portfolio"
   vpc_id      = aws_vpc.database.id
 
-  egress {
-    description = "Required outbound responses"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   lifecycle {
     create_before_destroy = true
   }
