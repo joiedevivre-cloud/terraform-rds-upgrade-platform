@@ -1,0 +1,12 @@
+{
+  "status": "PENDING",
+  "commit_sha": "REPLACE_ME",
+  "aws_region": "ca-central-1",
+  "source_engine_version": "15.10",
+  "target_engine_version": "16.8",
+  "blue_green_deployment_id": "REPLACE_ME",
+  "started_at_utc": "REPLACE_ME",
+  "switchover_started_at_utc": "REPLACE_ME",
+  "switchover_completed_at_utc": "REPLACE_ME",
+  "cleanup_completed_at_utc": "REPLACE_ME"
+}

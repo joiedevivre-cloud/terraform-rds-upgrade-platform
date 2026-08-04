@@ -1,0 +1,39 @@
+﻿{
+    "schema_version":  1,
+    "result":  "PASS",
+    "checked_at_utc":  "2026-08-03T22:56:48.9810438Z",
+    "instance_id":  "i-REDACTED",
+    "database_host":  "aurora-blue.cluster-REDACTED.ca-central-1.rds.amazonaws.com",
+    "database_name":  "upgrade_lab",
+    "command_id":  "SSM-COMMAND-REDACTED",
+    "ssm_status":  "Success",
+    "response_code":  0,
+    "summary":  {
+                    "result":  "PASS",
+                    "database":  "upgrade_lab",
+                    "sequences":  1,
+                    "active_ddl":  0,
+                    "extensions":  {
+                                       "plpgsql":  "1.0",
+                                       "pg_stat_statements":  "1.10"
+                                   },
+                    "publications":  0,
+                    "large_objects":  0,
+                    "logical_slots":  0,
+                    "subscriptions":  0,
+                    "checked_at_utc":  "2026-08-03T22:56:46.138Z",
+                    "server_version":  "15.10",
+                    "invalid_indexes":  0,
+                    "unlogged_tables":  0,
+                    "unsafe_triggers":  0,
+                    "baseline_row_count":  100000,
+                    "materialized_views":  0,
+                    "database_size_bytes":  21809175,
+                    "unapproved_extensions":  0,
+                    "rds_logical_replication":  "on",
+                    "replica_identity_failures":  0,
+                    "transactions_over_5_minutes":  0
+                },
+    "stdout":  " database_name | server_version | database_size \n---------------+----------------+---------------\n upgrade_lab   | 15.10          | 21 MB\n(1 row)\n\n      extname       | extversion \n--------------------+------------\n pg_stat_statements | 1.10\n plpgsql            | 1.0\n(2 rows)\n\nDO\n pid | usename | state | xact_start | query_start | query \n-----+---------+-------+------------+-------------+-------\n(0 rows)\n\nDO\nDO\nDO\n sequence_count \n----------------\n              1\n(1 row)\n\n schemaname | matviewname \n------------+-------------\n(0 rows)\n\n schemaname | indexrelname \n------------+--------------\n(0 rows)\n\nDO\n slot_name | plugin | slot_type | active \n-----------+--------+-----------+--------\n(0 rows)\n\n   datname   | numbackends | xact_commit | xact_rollback | blks_read | blks_hit | deadlocks \n-------------+-------------+-------------+---------------+-----------+----------+-----------\n upgrade_lab |           1 |        8290 |             0 |      2087 |  1350305 |         0\n(1 row)\n\n                                                                                                                                                                                                                                                                                            precheck_machine_report                                                                                                                                                                                                                                                                                            \n---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n PRECHECK_JSON={\"result\": \"PASS\", \"database\": \"upgrade_lab\", \"sequences\": 1, \"active_ddl\": 0, \"extensions\": {\"plpgsql\": \"1.0\", \"pg_stat_statements\": \"1.10\"}, \"publications\": 0, \"large_objects\": 0, \"logical_slots\": 0, \"subscriptions\": 0, \"checked_at_utc\": \"2026-08-03T22:56:46.138Z\", \"server_version\": \"15.10\", \"invalid_indexes\": 0, \"unlogged_tables\": 0, \"unsafe_triggers\": 0, \"baseline_row_count\": 100000, \"materialized_views\": 0, \"database_size_bytes\": 21809175, \"unapproved_extensions\": 0, \"rds_logical_replication\": \"on\", \"replica_identity_failures\": 0, \"transactions_over_5_minutes\": 0}\n(1 row)\n\n",
+    "stderr":  ""
+}

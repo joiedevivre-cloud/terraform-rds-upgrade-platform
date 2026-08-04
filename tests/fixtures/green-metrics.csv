@@ -1,0 +1,6 @@
+timestamp_utc,latency_ms,success
+2026-08-03T18:00:00Z,10,true
+2026-08-03T18:00:01Z,11,true
+2026-08-03T18:00:02Z,12,true
+2026-08-03T18:00:03Z,13,true
+2026-08-03T18:00:04Z,14,true

@@ -1,0 +1,148 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "rds-upgrade/**"
+      - ".github/workflows/terraform-apply.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-production
+  cancel-in-progress: false
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_VAR_enable_database: ${{ vars.ENABLE_DATABASE || 'false' }}
+  TF_VAR_upgrade_complete: ${{ vars.UPGRADE_COMPLETE || 'false' }}
+
+jobs:
+  plan-production:
+    name: Create immutable production plan
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-name: ${{ steps.metadata.outputs.artifact_name }}
+      plan-sha256: ${{ steps.metadata.outputs.plan_sha256 }}
+    defaults:
+      run:
+        working-directory: rds-upgrade
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.13.4
+
+      - uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
+          aws-region: ca-central-1
+
+      - name: Terraform init
+        run: >-
+          terraform init
+          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          -backend-config="key=rds-upgrade/prod.tfstate"
+          -backend-config="region=ca-central-1"
+          -backend-config="encrypt=true"
+          -backend-config="use_lockfile=true"
+
+      - name: Validate exact main commit
+        run: |
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          terraform fmt -check -recursive
+          terraform validate
+
+      - name: Create saved production plan
+        run: |
+          terraform plan -out=approved.tfplan
+          terraform show -no-color approved.tfplan > approved-plan.txt
+
+      - name: Create integrity metadata
+        id: metadata
+        run: |
+          plan_sha256="$(sha256sum approved.tfplan | cut -d ' ' -f1)"
+          printf '%s\n' "${GITHUB_SHA}" > approved.commit
+          printf '%s  %s\n' "${plan_sha256}" "approved.tfplan" > approved.tfplan.sha256
+          printf 'artifact_name=terraform-production-plan-%s\n' "${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          printf 'plan_sha256=%s\n' "${plan_sha256}" >> "${GITHUB_OUTPUT}"
+          {
+            printf '## Production plan awaiting approval\n\n'
+            printf -- '- Commit: `%s`\n' "${GITHUB_SHA}"
+            printf -- '- Plan SHA-256: `%s`\n' "${plan_sha256}"
+            printf -- '- Artifact retention: 1 day\n'
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      # Binary plans can contain sensitive values. Keep access repository-scoped,
+      # retain briefly, and never commit or promote the binary as portfolio evidence.
+      - name: Upload immutable plan artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: terraform-production-plan-${{ github.sha }}
+          path: |
+            rds-upgrade/approved.tfplan
+            rds-upgrade/approved-plan.txt
+            rds-upgrade/approved.commit
+            rds-upgrade/approved.tfplan.sha256
+          if-no-files-found: error
+          retention-days: 1
+
+  apply-approved-plan:
+    name: Approve and apply exact saved plan
+    needs: plan-production
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: rds-upgrade
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ needs.plan-production.outputs.artifact-name }}
+          path: rds-upgrade
+
+      - name: Verify approved artifact and commit
+        run: |
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(cat approved.commit)" = "${GITHUB_SHA}"
+          sha256sum --check approved.tfplan.sha256
+          test "$(sha256sum approved.tfplan | cut -d ' ' -f1)" = "${{ needs.plan-production.outputs.plan-sha256 }}"
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.13.4
+
+      # ApplyRole is acquired only after protected-environment approval and
+      # artifact integrity verification.
+      - uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_APPLY_ROLE_ARN }}
+          aws-region: ca-central-1
+
+      - name: Terraform init
+        run: >-
+          terraform init
+          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          -backend-config="key=rds-upgrade/prod.tfstate"
+          -backend-config="region=ca-central-1"
+          -backend-config="encrypt=true"
+          -backend-config="use_lockfile=true"
+
+      - name: Apply exact approved plan
+        run: terraform apply -auto-approve approved.tfplan

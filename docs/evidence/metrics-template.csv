@@ -1,0 +1,1 @@
+timestamp_utc,environment,engine_version,transactions,error_count,error_rate_percent,p50_ms,p95_ms,p99_ms,replication_lag_seconds,row_count,checksum,commit_sha

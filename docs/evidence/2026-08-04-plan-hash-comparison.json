@@ -1,0 +1,58 @@
+﻿[
+    {
+        "name":  "customer_range",
+        "blue_hash":  "d95f773a93f76084e727e5ee1135991a93dfcf0d1d0f51ea756be82a8d7095be",
+        "green_hash":  "d95f773a93f76084e727e5ee1135991a93dfcf0d1d0f51ea756be82a8d7095be",
+        "plan_changed":  false,
+        "review_status":  "UNCHANGED"
+    },
+    {
+        "name":  "customer_recent",
+        "blue_hash":  "37f73b544fea88a08c33518fb200c2ef8a06e76fd2cadba2b75be6ac431ea99e",
+        "green_hash":  "37f73b544fea88a08c33518fb200c2ef8a06e76fd2cadba2b75be6ac431ea99e",
+        "plan_changed":  false,
+        "review_status":  "UNCHANGED"
+    },
+    {
+        "name":  "customer_window",
+        "blue_hash":  "6cb6ac04b9a0e557d14927691422cbef59bcc46f59a8c179d136f3ebc97e3639",
+        "green_hash":  "6cb6ac04b9a0e557d14927691422cbef59bcc46f59a8c179d136f3ebc97e3639",
+        "plan_changed":  false,
+        "review_status":  "UNCHANGED"
+    },
+    {
+        "name":  "daily_counts",
+        "blue_hash":  "e1536ffce4cd1ab2c8c948151fee2bdb720f6a2a74f68e48e8cb54959e6b329d",
+        "green_hash":  "e1536ffce4cd1ab2c8c948151fee2bdb720f6a2a74f68e48e8cb54959e6b329d",
+        "plan_changed":  false,
+        "review_status":  "UNCHANGED"
+    },
+    {
+        "name":  "date_aggregate",
+        "blue_hash":  "886b139267925e59a7f958eac71c1e18e9da483b168e3c7a2b5a94da09f69dd1",
+        "green_hash":  "886b139267925e59a7f958eac71c1e18e9da483b168e3c7a2b5a94da09f69dd1",
+        "plan_changed":  false,
+        "review_status":  "UNCHANGED"
+    },
+    {
+        "name":  "pk_lookup",
+        "blue_hash":  "1d799afa93919bd1327080162001e704a3ad0b1f16f808b3b03783ad7df04028",
+        "green_hash":  "1d799afa93919bd1327080162001e704a3ad0b1f16f808b3b03783ad7df04028",
+        "plan_changed":  false,
+        "review_status":  "UNCHANGED"
+    },
+    {
+        "name":  "status_aggregate",
+        "blue_hash":  "bc95a000476f90c0cd8f8f27a1ee3ce1b89002c43e24d49bd6b0e198ba981918",
+        "green_hash":  "bc95a000476f90c0cd8f8f27a1ee3ce1b89002c43e24d49bd6b0e198ba981918",
+        "plan_changed":  false,
+        "review_status":  "UNCHANGED"
+    },
+    {
+        "name":  "top_amounts",
+        "blue_hash":  "0e3b5a3e63fb58992bb8e53b4de2b8a3ce4e4f570825f7eb771c1da3bb72daf0",
+        "green_hash":  "0e3b5a3e63fb58992bb8e53b4de2b8a3ce4e4f570825f7eb771c1da3bb72daf0",
+        "plan_changed":  false,
+        "review_status":  "UNCHANGED"
+    }
+]

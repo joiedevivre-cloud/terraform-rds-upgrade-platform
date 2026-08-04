@@ -1,0 +1,5 @@
+bucket       = "REPLACE_WITH_STATE_BUCKET"
+key          = "rds-upgrade/prod.tfstate"
+region       = "ca-central-1"
+encrypt      = true
+use_lockfile = true

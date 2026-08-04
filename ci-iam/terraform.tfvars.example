@@ -1,0 +1,8 @@
+github_repository        = "GITHUB_OWNER/GITHUB_REPOSITORY"
+github_oidc_provider_arn = "arn:aws:iam::AWS_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+create_github_oidc_provider = false
+state_bucket_name        = "REPLACE_WITH_STATE_BUCKET"
+state_admin_principal_arns = [
+  "arn:aws:iam::AWS_ACCOUNT_ID:role/PlatformAdministrator"
+]
+developer_user_names = ["REPLACE_WITH_DEVELOPER_USER"]

@@ -1,0 +1,101 @@
+name: Terraform Plan
+
+on:
+  pull_request:
+    paths:
+      - "rds-upgrade/**"
+      - ".github/workflows/terraform-plan.yml"
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+concurrency:
+  group: terraform-plan-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rds-upgrade
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_enable_database: ${{ vars.ENABLE_DATABASE || 'false' }}
+      TF_VAR_upgrade_complete: ${{ vars.UPGRADE_COMPLETE || 'false' }}
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@dcedce43c6f43de0b836d1fe38946645c9c638dc # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.13.4
+
+      - uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
+          aws-region: ca-central-1
+
+      - name: Terraform format
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        run: >-
+          terraform init
+          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          -backend-config="key=rds-upgrade/prod.tfstate"
+          -backend-config="region=ca-central-1"
+          -backend-config="encrypt=true"
+          -backend-config="use_lockfile=true"
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - uses: terraform-linters/setup-tflint@6e87008f9dd1fe3e34e66aca6c97b4a69f72a7f4 # v4
+        with:
+          tflint_version: v0.55.1
+
+      - name: TFLint
+        run: tflint --init && tflint
+
+      - name: Checkov
+        uses: bridgecrewio/checkov-action@9b70310bcd306d11740313070b940167d6b23085 # v12
+        with:
+          directory: rds-upgrade
+          framework: terraform
+
+      - name: Terraform plan
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Render plan
+        run: terraform show -no-color tfplan > plan.txt
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: terraform-plan-${{ github.event.pull_request.number }}-${{ github.sha }}
+          path: |
+            rds-upgrade/tfplan
+            rds-upgrade/plan.txt
+          retention-days: 1
+
+      - name: Comment plan summary
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('rds-upgrade/plan.txt', 'utf8');
+            const body = `### Terraform plan for ${context.sha}\n\n<details><summary>Show plan</summary>\n\n\`\`\`terraform\n${plan.slice(0, 60000)}\n\`\`\`\n</details>`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });

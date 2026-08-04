@@ -1,0 +1,15 @@
+enable_database              = false
+baseline_engine_version      = "15.10"
+target_engine_version        = "16.8"
+upgrade_complete             = false
+# Initial baseline only. Convert credentials, then set false and provide the ARN.
+manage_master_user_password  = true
+external_master_secret_arn   = null
+instance_class               = "db.t4g.medium"
+backup_retention_days        = 1
+deletion_protection          = true
+skip_final_snapshot          = false
+performance_insights_enabled = false
+allowed_client_cidrs         = []
+enable_workload_runner        = false
+workload_runner_instance_type = "t4g.micro"

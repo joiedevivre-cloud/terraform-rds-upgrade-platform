@@ -1,0 +1,45 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "StartSessionToPortfolioRunner",
+      "Effect": "Allow",
+      "Action": "ssm:StartSession",
+      "Resource": [
+        "arn:aws:ec2:AWS_REGION:AWS_ACCOUNT_ID:instance/RUNNER_INSTANCE_ID",
+        "arn:aws:ssm:AWS_REGION::document/SSM-SessionManagerRunShell",
+        "arn:aws:ssm:AWS_REGION:AWS_ACCOUNT_ID:document/SSM-SessionManagerRunShell"
+      ]
+    },
+    {
+      "Sid": "RunOneShotCommandOnPortfolioRunner",
+      "Effect": "Allow",
+      "Action": "ssm:SendCommand",
+      "Resource": [
+        "arn:aws:ec2:AWS_REGION:AWS_ACCOUNT_ID:instance/RUNNER_INSTANCE_ID",
+        "arn:aws:ssm:AWS_REGION::document/AWS-RunShellScript",
+        "arn:aws:ssm:AWS_REGION:AWS_ACCOUNT_ID:document/AWS-RunShellScript"
+      ]
+    },
+    {
+      "Sid": "InspectSsmConnectivity",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:DescribeInstanceInformation",
+        "ssm:GetConnectionStatus",
+        "ssm:GetCommandInvocation",
+        "ssm:ListCommandInvocations"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageOwnSessionsOnly",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:ResumeSession",
+        "ssm:TerminateSession"
+      ],
+      "Resource": "arn:aws:ssm:AWS_REGION:AWS_ACCOUNT_ID:session/${aws:username}-*"
+    }
+  ]
+}

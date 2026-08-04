@@ -1,0 +1,34 @@
+﻿{
+    "GeneratedAtUtc":  "2026-08-04T03:41:39.9046535Z",
+    "Blue":  {
+                 "Version":  "15.10",
+                 "Samples":  200,
+                 "ErrorCount":  0,
+                 "ErrorRatePercent":  0,
+                 "P50Milliseconds":  43.922,
+                 "P95Milliseconds":  48.255,
+                 "P99Milliseconds":  63.111
+             },
+    "Green":  {
+                  "Version":  "16.8",
+                  "Samples":  200,
+                  "ErrorCount":  0,
+                  "ErrorRatePercent":  0,
+                  "P50Milliseconds":  42.469,
+                  "P95Milliseconds":  47.725,
+                  "P99Milliseconds":  56.889
+              },
+    "P95RegressionPercent":  -1.0983,
+    "BlueRowCount":  100000,
+    "GreenRowCount":  100000,
+    "RowCountMismatch":  0,
+    "BlueChecksum":  "100000|5000050000|49971454.26",
+    "GreenChecksum":  "100000|5000050000|49971454.26",
+    "Gates":  {
+                  "P95RegressionPass":  true,
+                  "ErrorRatePass":  true,
+                  "RowCountPass":  true,
+                  "ChecksumPass":  true
+              },
+    "AllGatesPass":  true
+}

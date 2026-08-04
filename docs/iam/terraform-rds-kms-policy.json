@@ -1,0 +1,46 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DiscoverAWSManagedKmsAliases",
+      "Effect": "Allow",
+      "Action": [
+        "kms:ListAliases"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "UseKmsForRdsAndSecretsManager",
+      "Effect": "Allow",
+      "Action": [
+        "kms:DescribeKey",
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncryptFrom",
+        "kms:ReEncryptTo",
+        "kms:GenerateDataKey",
+        "kms:GenerateDataKeyWithoutPlaintext"
+      ],
+      "Resource": "arn:aws:kms:ca-central-1:*:key/*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": [
+            "rds.ca-central-1.amazonaws.com",
+            "secretsmanager.ca-central-1.amazonaws.com"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "CreateGrantForRdsResources",
+      "Effect": "Allow",
+      "Action": "kms:CreateGrant",
+      "Resource": "arn:aws:kms:ca-central-1:*:key/*",
+      "Condition": {
+        "Bool": {
+          "kms:GrantIsForAWSResource": "true"
+        }
+      }
+    }
+  ]
+}
