@@ -6,6 +6,7 @@ locals {
   lock_object_arn                      = "${local.state_bucket_arn}/${var.state_key}.tflock"
   workload_runner_role_arn             = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-upgrade-portfolio-workload-runner"
   workload_runner_instance_profile_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/rds-upgrade-portfolio-workload-runner"
+  github_oidc_subject_repository       = var.github_oidc_subject_repository != "" ? var.github_oidc_subject_repository : var.github_repository
   oidc_provider_arn = var.create_github_oidc_provider ? (
     aws_iam_openid_connect_provider.github[0].arn
   ) : var.github_oidc_provider_arn
@@ -47,8 +48,8 @@ data "aws_iam_policy_document" "plan_trust" {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-        "repo:${var.github_repository}:pull_request",
-        "repo:${var.github_repository}:ref:refs/heads/main"
+        "repo:${local.github_oidc_subject_repository}:pull_request",
+        "repo:${local.github_oidc_subject_repository}:ref:refs/heads/main"
       ]
     }
   }
@@ -69,7 +70,7 @@ data "aws_iam_policy_document" "apply_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:environment:production"]
+      values   = ["repo:${local.github_oidc_subject_repository}:environment:production"]
     }
   }
 }

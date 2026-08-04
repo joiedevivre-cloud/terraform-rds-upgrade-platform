@@ -8,6 +8,12 @@ variable "github_repository" {
   type        = string
 }
 
+variable "github_oidc_subject_repository" {
+  description = "Repository portion used in the OIDC sub claim. Set owner@OWNER_ID/repository@REPOSITORY_ID when GitHub subject customization includes stable IDs; otherwise leave empty."
+  type        = string
+  default     = ""
+}
+
 variable "github_oidc_provider_arn" {
   description = "Existing GitHub OIDC provider ARN. Leave empty only when create_github_oidc_provider is true."
   type        = string
