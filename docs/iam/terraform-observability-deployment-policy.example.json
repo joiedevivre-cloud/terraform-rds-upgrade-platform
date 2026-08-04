@@ -68,8 +68,7 @@
       "Effect": "Allow",
       "Action": [
         "iam:AttachRolePolicy",
-        "iam:DetachRolePolicy",
-        "iam:ListAttachedRolePolicies"
+        "iam:DetachRolePolicy"
       ],
       "Resource": "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-enhanced-monitoring",
       "Condition": {
@@ -77,6 +76,12 @@
           "iam:PolicyARN": "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
         }
       }
+    },
+    {
+      "Sid": "ListEnhancedMonitoringAttachments",
+      "Effect": "Allow",
+      "Action": "iam:ListAttachedRolePolicies",
+      "Resource": "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-enhanced-monitoring"
     },
     {
       "Sid": "PassOnlyPortfolioMonitoringRoles",
