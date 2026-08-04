@@ -23,6 +23,14 @@ and prevent self-review. Configure these repository/environment variables:
 - `ENABLE_DATABASE`
 - `UPGRADE_COMPLETE`
 
+Create the repository Actions secret `EXTERNAL_MASTER_SECRET_ARN` with the ARN of the
+independently managed Secrets Manager secret created during the one-time Blue/Green
+credential conversion. This is an ARN, not the password value, but it is masked to
+avoid exposing account-specific infrastructure metadata in pull-request logs. Both
+workflows force `TF_VAR_manage_master_user_password=false`; a missing secret ARN makes
+the Terraform precondition fail closed instead of silently returning production to an
+RDS-managed password mode that Blue/Green does not support.
+
 No long-lived AWS access key is stored in GitHub. OIDC trust binds PlanRole to pull
 requests plus the exact `main` branch, and binds ApplyRole to the protected production
 environment. On `main`, the PlanRole job creates the saved plan and publishes its

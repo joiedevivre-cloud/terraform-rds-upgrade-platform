@@ -24,6 +24,36 @@ resource "aws_rds_cluster_parameter_group" "postgres15" {
     apply_method = "pending-reboot"
   }
 
+  parameter {
+    name         = "log_min_duration_statement"
+    value        = tostring(var.log_min_duration_statement_ms)
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_statement"
+    value        = "ddl"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_connections"
+    value        = "1"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_disconnections"
+    value        = "1"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_lock_waits"
+    value        = "1"
+    apply_method = "immediate"
+  }
+
   tags = local.common_tags
 }
 
@@ -36,6 +66,36 @@ resource "aws_rds_cluster_parameter_group" "postgres16" {
     name         = "rds.logical_replication"
     value        = "1"
     apply_method = "pending-reboot"
+  }
+
+  parameter {
+    name         = "log_min_duration_statement"
+    value        = tostring(var.log_min_duration_statement_ms)
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_statement"
+    value        = "ddl"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_connections"
+    value        = "1"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_disconnections"
+    value        = "1"
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_lock_waits"
+    value        = "1"
+    apply_method = "immediate"
   }
 
   tags = local.common_tags
@@ -56,6 +116,9 @@ resource "aws_db_parameter_group" "postgres16" {
 }
 
 resource "aws_rds_cluster" "blue" {
+  #checkov:skip=CKV_AWS_327:Existing encrypted lab cluster cannot change its storage KMS key in place; remediation requires snapshot restore to a separately validated CMK-backed cluster.
+  #checkov:skip=CKV2_AWS_8:Automated Aurora backups are enabled; an AWS Backup plan plus measured restore/RTO evidence is intentionally tracked as the separate DR portfolio phase and is not claimed complete here.
+  #checkov:skip=CKV2_AWS_27:PostgreSQL logs are exported and both versioned cluster parameter groups enable slow-query, DDL, connection, disconnection, and lock-wait logging; Checkov cannot resolve the conditional parameter-group reference.
   count = var.enable_database ? 1 : 0
 
   cluster_identifier = "${var.name_prefix}-blue"
@@ -68,19 +131,20 @@ resource "aws_rds_cluster" "blue" {
   # Aurora Blue/Green does not support an RDS-managed master password. The
   # baseline may start managed, then scripts/convert-master-password.ps1 performs
   # the one-time transition without putting plaintext in Terraform configuration.
-  manage_master_user_password     = var.manage_master_user_password
-  storage_encrypted               = true
-  db_subnet_group_name            = aws_db_subnet_group.database.name
-  vpc_security_group_ids          = [aws_security_group.database.id]
-  db_cluster_parameter_group_name = local.production_cluster_parameter_group
-  backup_retention_period         = var.backup_retention_days
-  preferred_backup_window         = "05:00-05:30"
-  preferred_maintenance_window    = "sun:06:00-sun:07:00"
-  copy_tags_to_snapshot           = true
-  deletion_protection             = var.deletion_protection
-  skip_final_snapshot             = var.skip_final_snapshot
-  final_snapshot_identifier       = var.skip_final_snapshot ? null : "${var.name_prefix}-blue-final"
-  enabled_cloudwatch_logs_exports = ["postgresql"]
+  manage_master_user_password         = var.manage_master_user_password
+  iam_database_authentication_enabled = true
+  storage_encrypted                   = true
+  db_subnet_group_name                = aws_db_subnet_group.database.name
+  vpc_security_group_ids              = [aws_security_group.database.id]
+  db_cluster_parameter_group_name     = local.production_cluster_parameter_group
+  backup_retention_period             = var.backup_retention_days
+  preferred_backup_window             = "05:00-05:30"
+  preferred_maintenance_window        = "sun:06:00-sun:07:00"
+  copy_tags_to_snapshot               = true
+  deletion_protection                 = var.deletion_protection
+  skip_final_snapshot                 = var.skip_final_snapshot
+  final_snapshot_identifier           = var.skip_final_snapshot ? null : "${var.name_prefix}-blue-final"
+  enabled_cloudwatch_logs_exports     = ["postgresql"]
 
   tags = merge(local.common_tags, {
     Name         = "${var.name_prefix}-blue"
@@ -100,18 +164,21 @@ resource "aws_rds_cluster" "blue" {
 }
 
 resource "aws_rds_cluster_instance" "blue_writer" {
+  #checkov:skip=CKV_AWS_226:Engine patch levels are pinned for reproducible cross-version evidence; minor upgrades use a separate reviewed PR, precheck, maintenance window, and validation workflow.
   count = var.enable_database ? 1 : 0
 
-  identifier                   = "${var.name_prefix}-blue-writer"
-  cluster_identifier           = aws_rds_cluster.blue[0].id
-  instance_class               = var.instance_class
-  engine                       = aws_rds_cluster.blue[0].engine
-  engine_version               = aws_rds_cluster.blue[0].engine_version
-  db_parameter_group_name      = local.production_instance_parameter_group
-  publicly_accessible          = false
-  auto_minor_version_upgrade   = false
-  performance_insights_enabled = var.performance_insights_enabled
-  monitoring_interval          = 0
+  identifier                      = "${var.name_prefix}-blue-writer"
+  cluster_identifier              = aws_rds_cluster.blue[0].id
+  instance_class                  = var.instance_class
+  engine                          = aws_rds_cluster.blue[0].engine
+  engine_version                  = aws_rds_cluster.blue[0].engine_version
+  db_parameter_group_name         = local.production_instance_parameter_group
+  publicly_accessible             = false
+  auto_minor_version_upgrade      = false
+  performance_insights_enabled    = true
+  performance_insights_kms_key_id = aws_kms_key.observability.arn
+  monitoring_interval             = 60
+  monitoring_role_arn             = aws_iam_role.rds_enhanced_monitoring.arn
 
   tags = merge(local.common_tags, {
     Name = "${var.name_prefix}-blue-writer"

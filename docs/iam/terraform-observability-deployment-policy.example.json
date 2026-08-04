@@ -1,0 +1,189 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ManagePortfolioFlowLogGroup",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:DeleteLogGroup",
+        "logs:DescribeLogGroups",
+        "logs:ListTagsForResource",
+        "logs:PutRetentionPolicy",
+        "logs:TagResource",
+        "logs:UntagResource",
+        "logs:AssociateKmsKey",
+        "logs:DisassociateKmsKey"
+      ],
+      "Resource": [
+        "arn:aws:logs:ca-central-1:AWS_ACCOUNT_ID:log-group:/aws/vpc/rds-upgrade-portfolio/flow-logs",
+        "arn:aws:logs:ca-central-1:AWS_ACCOUNT_ID:log-group:/aws/vpc/rds-upgrade-portfolio/flow-logs:*"
+      ]
+    },
+    {
+      "Sid": "DescribeLogGroupsForTerraform",
+      "Effect": "Allow",
+      "Action": "logs:DescribeLogGroups",
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManagePortfolioFlowLogs",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateFlowLogs",
+        "ec2:DeleteFlowLogs",
+        "ec2:DescribeFlowLogs"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManagePortfolioMonitoringRoles",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:GetRole",
+        "iam:UpdateAssumeRolePolicy",
+        "iam:TagRole",
+        "iam:UntagRole",
+        "iam:ListRoleTags"
+      ],
+      "Resource": [
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-vpc-flow-logs",
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-enhanced-monitoring"
+      ]
+    },
+    {
+      "Sid": "ManageFlowLogInlinePolicy",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy"
+      ],
+      "Resource": "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-vpc-flow-logs"
+    },
+    {
+      "Sid": "AttachOnlyEnhancedMonitoringPolicy",
+      "Effect": "Allow",
+      "Action": [
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy"
+      ],
+      "Resource": "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-enhanced-monitoring",
+      "Condition": {
+        "ArnEquals": {
+          "iam:PolicyARN": "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+        }
+      }
+    },
+    {
+      "Sid": "ReadPortfolioMonitoringRolePolicies",
+      "Effect": "Allow",
+      "Action": [
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies"
+      ],
+      "Resource": [
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-vpc-flow-logs",
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-enhanced-monitoring"
+      ]
+    },
+    {
+      "Sid": "ManageCiObservabilityInlinePolicies",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:GetRolePolicy",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
+        "iam:ListRoleTags",
+        "iam:UpdateAssumeRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy"
+      ],
+      "Resource": [
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/TerraformPlanRole",
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/TerraformApplyRole"
+      ]
+    },
+    {
+      "Sid": "ReadGithubOidcProviderDependency",
+      "Effect": "Allow",
+      "Action": "iam:GetOpenIDConnectProvider",
+      "Resource": "arn:aws:iam::AWS_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+    },
+    {
+      "Sid": "PassOnlyPortfolioMonitoringRoles",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": [
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-vpc-flow-logs",
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-enhanced-monitoring"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": [
+            "vpc-flow-logs.amazonaws.com",
+            "monitoring.rds.amazonaws.com"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "CreateTaggedObservabilityKey",
+      "Effect": "Allow",
+      "Action": "kms:CreateKey",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/Project": "aurora-postgresql-upgrade-platform"
+        }
+      }
+    },
+    {
+      "Sid": "ManageTaggedObservabilityKeys",
+      "Effect": "Allow",
+      "Action": [
+        "kms:DescribeKey",
+        "kms:GetKeyPolicy",
+        "kms:PutKeyPolicy",
+        "kms:GetKeyRotationStatus",
+        "kms:EnableKeyRotation",
+        "kms:ListResourceTags",
+        "kms:TagResource",
+        "kms:UntagResource",
+        "kms:ScheduleKeyDeletion",
+        "kms:CancelKeyDeletion",
+        "kms:CreateGrant",
+        "kms:ListGrants",
+        "kms:RevokeGrant"
+      ],
+      "Resource": "arn:aws:kms:ca-central-1:AWS_ACCOUNT_ID:key/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "aurora-postgresql-upgrade-platform"
+        }
+      }
+    },
+    {
+      "Sid": "ManagePortfolioObservabilityAlias",
+      "Effect": "Allow",
+      "Action": [
+        "kms:CreateAlias",
+        "kms:UpdateAlias",
+        "kms:DeleteAlias"
+      ],
+      "Resource": [
+        "arn:aws:kms:ca-central-1:AWS_ACCOUNT_ID:alias/rds-upgrade-portfolio-observability",
+        "arn:aws:kms:ca-central-1:AWS_ACCOUNT_ID:key/*"
+      ]
+    },
+    {
+      "Sid": "ListKmsAliasesForTerraform",
+      "Effect": "Allow",
+      "Action": "kms:ListAliases",
+      "Resource": "*"
+    }
+  ]
+}

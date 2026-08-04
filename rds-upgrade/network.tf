@@ -8,6 +8,19 @@ resource "aws_vpc" "database" {
   }
 }
 
+# Explicitly manage the VPC default security group so no resource can inherit
+# permissive default ingress or egress rules by accident.
+resource "aws_default_security_group" "database" {
+  vpc_id = aws_vpc.database.id
+
+  ingress = []
+  egress  = []
+
+  tags = {
+    Name = "${var.name_prefix}-default-deny-all"
+  }
+}
+
 resource "aws_subnet" "database_a" {
   vpc_id                  = aws_vpc.database.id
   cidr_block              = "10.20.10.0/24"
@@ -45,14 +58,6 @@ resource "aws_security_group" "database" {
   name_prefix = "${var.name_prefix}-postgres-"
   description = "Deny-by-default ingress for the Aurora PostgreSQL upgrade portfolio"
   vpc_id      = aws_vpc.database.id
-
-  egress {
-    description = "Required outbound responses"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   lifecycle {
     create_before_destroy = true

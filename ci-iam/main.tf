@@ -6,6 +6,12 @@ locals {
   lock_object_arn                      = "${local.state_bucket_arn}/${var.state_key}.tflock"
   workload_runner_role_arn             = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-upgrade-portfolio-workload-runner"
   workload_runner_instance_profile_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/rds-upgrade-portfolio-workload-runner"
+  flow_logs_role_arn                   = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-upgrade-portfolio-vpc-flow-logs"
+  enhanced_monitoring_role_arn         = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-upgrade-portfolio-enhanced-monitoring"
+  observability_key_arn                = "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key/*"
+  observability_alias_arn              = "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:alias/rds-upgrade-portfolio-observability"
+  flow_log_group_arn                   = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vpc/rds-upgrade-portfolio/flow-logs"
+  github_oidc_subject_repository       = var.github_oidc_subject_repository != "" ? var.github_oidc_subject_repository : var.github_repository
   oidc_provider_arn = var.create_github_oidc_provider ? (
     aws_iam_openid_connect_provider.github[0].arn
   ) : var.github_oidc_provider_arn
@@ -47,8 +53,8 @@ data "aws_iam_policy_document" "plan_trust" {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-        "repo:${var.github_repository}:pull_request",
-        "repo:${var.github_repository}:ref:refs/heads/main"
+        "repo:${local.github_oidc_subject_repository}:pull_request",
+        "repo:${local.github_oidc_subject_repository}:ref:refs/heads/main"
       ]
     }
   }
@@ -69,7 +75,7 @@ data "aws_iam_policy_document" "apply_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:environment:production"]
+      values   = ["repo:${local.github_oidc_subject_repository}:environment:production"]
     }
   }
 }
@@ -164,7 +170,10 @@ resource "aws_iam_role_policy" "plan_read" {
       Action = [
         "ec2:Describe*", "rds:Describe*", "rds:ListTagsForResource",
         "cloudwatch:DescribeAlarms", "cloudwatch:ListTagsForResource",
-        "kms:DescribeKey", "kms:ListAliases", "secretsmanager:DescribeSecret",
+        "logs:DescribeLogGroups", "logs:ListTagsForResource",
+        "iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:ListRoleTags",
+        "kms:DescribeKey", "kms:GetKeyPolicy", "kms:GetKeyRotationStatus", "kms:ListAliases", "kms:ListResourceTags",
+        "secretsmanager:DescribeSecret",
         "sts:GetCallerIdentity"
       ]
       Resource = "*"
@@ -212,15 +221,117 @@ resource "aws_iam_role_policy" "apply_pass_role" {
   role = aws_iam_role.terraform_apply.id
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid      = "PassWorkloadRunnerRoleOnly"
-      Effect   = "Allow"
-      Action   = "iam:PassRole"
-      Resource = local.workload_runner_role_arn
-      Condition = {
-        StringEquals = { "iam:PassedToService" = "ec2.amazonaws.com" }
+    Statement = [
+      {
+        Sid      = "PassWorkloadRunnerRoleOnly"
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = local.workload_runner_role_arn
+        Condition = {
+          StringEquals = { "iam:PassedToService" = "ec2.amazonaws.com" }
+        }
+      },
+      {
+        Sid      = "PassObservabilityRolesOnly"
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = [local.flow_logs_role_arn, local.enhanced_monitoring_role_arn]
+        Condition = {
+          StringEquals = {
+            "iam:PassedToService" = ["vpc-flow-logs.amazonaws.com", "monitoring.rds.amazonaws.com"]
+          }
+        }
       }
-    }]
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "apply_observability" {
+  name = "TerraformPortfolioObservabilityApply"
+  role = aws_iam_role.terraform_apply.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "ManageFlowLogs"
+        Effect   = "Allow"
+        Action   = ["ec2:CreateFlowLogs", "ec2:DeleteFlowLogs", "ec2:DescribeFlowLogs"]
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageFlowLogGroup"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:ListTagsForResource",
+          "logs:PutRetentionPolicy", "logs:TagResource", "logs:UntagResource",
+          "logs:AssociateKmsKey", "logs:DisassociateKmsKey"
+        ]
+        Resource = [local.flow_log_group_arn, "${local.flow_log_group_arn}:*"]
+      },
+      {
+        Sid      = "DescribeLogGroups"
+        Effect   = "Allow"
+        Action   = "logs:DescribeLogGroups"
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageObservabilityRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:CreateRole", "iam:DeleteRole", "iam:GetRole", "iam:UpdateAssumeRolePolicy",
+          "iam:TagRole", "iam:UntagRole", "iam:ListRoleTags", "iam:GetRolePolicy",
+          "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies"
+        ]
+        Resource = [local.flow_logs_role_arn, local.enhanced_monitoring_role_arn]
+      },
+      {
+        Sid      = "AttachEnhancedMonitoringPolicyOnly"
+        Effect   = "Allow"
+        Action   = ["iam:AttachRolePolicy", "iam:DetachRolePolicy"]
+        Resource = local.enhanced_monitoring_role_arn
+        Condition = {
+          ArnEquals = {
+            "iam:PolicyARN" = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+          }
+        }
+      },
+      {
+        Sid      = "CreateTaggedObservabilityKey"
+        Effect   = "Allow"
+        Action   = "kms:CreateKey"
+        Resource = "*"
+        Condition = {
+          StringEquals = { "aws:RequestTag/Project" = "aurora-postgresql-upgrade-platform" }
+        }
+      },
+      {
+        Sid    = "ManageTaggedObservabilityKeys"
+        Effect = "Allow"
+        Action = [
+          "kms:DescribeKey", "kms:GetKeyPolicy", "kms:PutKeyPolicy", "kms:GetKeyRotationStatus",
+          "kms:EnableKeyRotation", "kms:ListResourceTags", "kms:TagResource", "kms:UntagResource",
+          "kms:ScheduleKeyDeletion", "kms:CancelKeyDeletion", "kms:CreateGrant",
+          "kms:ListGrants", "kms:RevokeGrant"
+        ]
+        Resource = local.observability_key_arn
+        Condition = {
+          StringEquals = { "aws:ResourceTag/Project" = "aurora-postgresql-upgrade-platform" }
+        }
+      },
+      {
+        Sid      = "ManageObservabilityAlias"
+        Effect   = "Allow"
+        Action   = ["kms:CreateAlias", "kms:UpdateAlias", "kms:DeleteAlias"]
+        Resource = [local.observability_alias_arn, local.observability_key_arn]
+      },
+      {
+        Sid      = "ListKmsAliases"
+        Effect   = "Allow"
+        Action   = "kms:ListAliases"
+        Resource = "*"
+      }
+    ]
   })
 }
 

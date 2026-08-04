@@ -26,9 +26,16 @@ jobs:
       TF_INPUT: "false"
       TF_VAR_enable_database: ${{ vars.ENABLE_DATABASE || 'false' }}
       TF_VAR_upgrade_complete: ${{ vars.UPGRADE_COMPLETE || 'false' }}
+      # Production has completed the one-time credential conversion. Fail closed
+      # rather than allowing a missing CI variable to re-enable RDS management.
+      TF_VAR_manage_master_user_password: "false"
+      TF_VAR_external_master_secret_arn: ${{ secrets.EXTERNAL_MASTER_SECRET_ARN }}
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Secret scan
         uses: gitleaks/gitleaks-action@dcedce43c6f43de0b836d1fe38946645c9c638dc # v2

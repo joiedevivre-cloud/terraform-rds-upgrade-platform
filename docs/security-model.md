@@ -76,3 +76,39 @@ the named artifact, verifies both hashes, and only then assumes `TerraformApplyR
 to apply the exact saved plan. Terraform binary plans can contain sensitive values;
 they are never committed or published as evidence, and repository artifact access
 must remain restricted.
+
+## Time-bounded security exceptions
+
+Checkov controls are suppressed only at the exact affected resources; no suppression
+disables a scanner globally. Each exception below records either a scanner limitation
+or work explicitly deferred to a separately evidenced phase.
+
+- `CKV_AWS_327`: The existing lab cluster is encrypted, but its storage key was not
+  declared as a customer-managed key at creation. Aurora cannot change an existing
+  cluster storage key in place. Remediation is a controlled replacement: take a
+  snapshot, restore a new cluster with a dedicated CMK, validate data and connectivity,
+  cut over, and retain the former cluster for the approved rollback window. Adding
+  `kms_key_id` directly to the existing resource is prohibited because it can propose
+  replacement of the production cluster.
+- `CKV_AWS_226`: Exact Aurora 15.10 and 16.8 patch levels are pinned so performance,
+  query-plan, and compatibility evidence remains reproducible. Minor upgrades are not
+  ignored; they require their own PR, AWS upgrade-path precheck, saved plan, maintenance
+  approval, and post-change validation instead of an unreviewed automatic change.
+- `CKV_AWS_111`, `CKV_AWS_356`, and `CKV_AWS_109` on the observability KMS policy:
+  AWS KMS key policies require `Resource = "*"`, where `*` means the single key to
+  which the policy is attached rather than every account resource. The account-root
+  statement enables IAM delegation within this account. CloudWatch Logs use is further
+  restricted to the regional service principal and the exact log-group encryption
+  context.
+- `CKV2_AWS_27`: PostgreSQL log export is enabled and both versioned cluster parameter
+  groups configure slow-query, DDL, connection, disconnection, and lock-wait logging.
+  The scanner cannot resolve which parameter group is selected through the conditional
+  local value, so this is a documented scanner limitation rather than a missing control.
+- `CKV2_AWS_8`: Aurora automated backups are enabled, but an AWS Backup plan and a
+  measured restore/RTO test remain a separate DR portfolio phase. Until that evidence
+  exists, the repository does not claim this control as implemented.
+
+The database security group has no explicit egress rules. Security groups are stateful,
+so response traffic for an approved inbound PostgreSQL connection remains allowed. Add
+an explicit destination-scoped egress rule only if a documented database feature later
+requires the cluster to initiate outbound traffic.
