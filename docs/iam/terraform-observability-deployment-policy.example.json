@@ -78,10 +78,16 @@
       }
     },
     {
-      "Sid": "ListEnhancedMonitoringAttachments",
+      "Sid": "ReadPortfolioMonitoringRolePolicies",
       "Effect": "Allow",
-      "Action": "iam:ListAttachedRolePolicies",
-      "Resource": "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-enhanced-monitoring"
+      "Action": [
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies"
+      ],
+      "Resource": [
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-vpc-flow-logs",
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/rds-upgrade-portfolio-enhanced-monitoring"
+      ]
     },
     {
       "Sid": "PassOnlyPortfolioMonitoringRoles",
