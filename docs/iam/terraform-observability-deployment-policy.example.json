@@ -90,6 +90,23 @@
       ]
     },
     {
+      "Sid": "ManageCiObservabilityInlinePolicies",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:GetRolePolicy",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
+        "iam:ListRoleTags",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy"
+      ],
+      "Resource": [
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/TerraformPlanRole",
+        "arn:aws:iam::AWS_ACCOUNT_ID:role/TerraformApplyRole"
+      ]
+    },
+    {
       "Sid": "PassOnlyPortfolioMonitoringRoles",
       "Effect": "Allow",
       "Action": "iam:PassRole",
