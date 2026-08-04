@@ -1,3 +1,4 @@
+# Portfolio evidence: comment-only change used to validate the PR plan pipeline.
 terraform {
   required_version = "~> 1.13.0"
 
