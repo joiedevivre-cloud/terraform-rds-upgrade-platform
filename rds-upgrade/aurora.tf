@@ -31,6 +31,12 @@ resource "aws_rds_cluster_parameter_group" "postgres15" {
   }
 
   parameter {
+    name         = "log_statement"
+    value        = "ddl"
+    apply_method = "immediate"
+  }
+
+  parameter {
     name         = "log_connections"
     value        = "1"
     apply_method = "immediate"
@@ -65,6 +71,12 @@ resource "aws_rds_cluster_parameter_group" "postgres16" {
   parameter {
     name         = "log_min_duration_statement"
     value        = tostring(var.log_min_duration_statement_ms)
+    apply_method = "immediate"
+  }
+
+  parameter {
+    name         = "log_statement"
+    value        = "ddl"
     apply_method = "immediate"
   }
 
@@ -151,17 +163,18 @@ resource "aws_rds_cluster" "blue" {
 resource "aws_rds_cluster_instance" "blue_writer" {
   count = var.enable_database ? 1 : 0
 
-  identifier                   = "${var.name_prefix}-blue-writer"
-  cluster_identifier           = aws_rds_cluster.blue[0].id
-  instance_class               = var.instance_class
-  engine                       = aws_rds_cluster.blue[0].engine
-  engine_version               = aws_rds_cluster.blue[0].engine_version
-  db_parameter_group_name      = local.production_instance_parameter_group
-  publicly_accessible          = false
-  auto_minor_version_upgrade   = false
-  performance_insights_enabled = true
-  monitoring_interval          = 60
-  monitoring_role_arn          = aws_iam_role.rds_enhanced_monitoring.arn
+  identifier                      = "${var.name_prefix}-blue-writer"
+  cluster_identifier              = aws_rds_cluster.blue[0].id
+  instance_class                  = var.instance_class
+  engine                          = aws_rds_cluster.blue[0].engine
+  engine_version                  = aws_rds_cluster.blue[0].engine_version
+  db_parameter_group_name         = local.production_instance_parameter_group
+  publicly_accessible             = false
+  auto_minor_version_upgrade      = false
+  performance_insights_enabled    = true
+  performance_insights_kms_key_id = aws_kms_key.observability.arn
+  monitoring_interval             = 60
+  monitoring_role_arn             = aws_iam_role.rds_enhanced_monitoring.arn
 
   tags = merge(local.common_tags, {
     Name = "${var.name_prefix}-blue-writer"

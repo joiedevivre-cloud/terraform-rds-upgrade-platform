@@ -1,3 +1,60 @@
+data "aws_caller_identity" "current" {}
+
+locals {
+  vpc_flow_log_group_name = "/aws/vpc/${var.name_prefix}/flow-logs"
+  vpc_flow_log_group_arn  = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:${local.vpc_flow_log_group_name}"
+}
+
+data "aws_iam_policy_document" "observability_kms" {
+  statement {
+    sid       = "EnableAccountAdministration"
+    actions   = ["kms:*"]
+    resources = ["*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+  }
+
+  statement {
+    sid = "AllowCloudWatchLogsEncryption"
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:DescribeKey"
+    ]
+    resources = ["*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["logs.${var.aws_region}.amazonaws.com"]
+    }
+
+    condition {
+      test     = "ArnEquals"
+      variable = "kms:EncryptionContext:aws:logs:arn"
+      values   = [local.vpc_flow_log_group_arn]
+    }
+  }
+}
+
+resource "aws_kms_key" "observability" {
+  description             = "Encrypts Aurora Performance Insights and VPC Flow Logs"
+  enable_key_rotation     = true
+  deletion_window_in_days = 30
+  policy                  = data.aws_iam_policy_document.observability_kms.json
+
+  tags = local.common_tags
+}
+
+resource "aws_kms_alias" "observability" {
+  name          = "alias/${var.name_prefix}-observability"
+  target_key_id = aws_kms_key.observability.key_id
+}
+
 data "aws_iam_policy_document" "vpc_flow_logs_assume" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -10,8 +67,9 @@ data "aws_iam_policy_document" "vpc_flow_logs_assume" {
 }
 
 resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
-  name              = "/aws/vpc/${var.name_prefix}/flow-logs"
-  retention_in_days = 30
+  name              = local.vpc_flow_log_group_name
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.observability.arn
 
   tags = local.common_tags
 }
