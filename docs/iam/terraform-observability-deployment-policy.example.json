@@ -107,6 +107,12 @@
       ]
     },
     {
+      "Sid": "ReadGithubOidcProviderDependency",
+      "Effect": "Allow",
+      "Action": "iam:GetOpenIDConnectProvider",
+      "Resource": "arn:aws:iam::AWS_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+    },
+    {
       "Sid": "PassOnlyPortfolioMonitoringRoles",
       "Effect": "Allow",
       "Action": "iam:PassRole",
