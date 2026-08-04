@@ -4,6 +4,9 @@ This repository demonstrates a controlled Aurora PostgreSQL 15 to 16 major-versi
 upgrade with Terraform, native S3 locking, GitHub OIDC, protected approval, managed
 Blue/Green Deployments, quantitative gates and auditable recovery procedures.
 
+설정의 전체 동작 원리와 각 보안 결정을 한국어로 이해하려면
+[`docs/how-it-works-ko.md`](docs/how-it-works-ko.md)를 먼저 읽으세요.
+
 ## Architecture
 
 ```mermaid
